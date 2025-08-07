@@ -2,6 +2,14 @@
   outputs =
     { flakelight, nixpkgs, ... }@inputs:
     flakelight ./. {
+      apps = {
+        sandbox = { writeShellScriptBin, ...}: let
+          script = writeShellScriptBin "sandbox" ''
+          nixos-rebuild build-vm --flake ".#myhost" && result/bin/run-*-vm -display none -serial mon:stdio
+        '';
+        in "${script}/bin/sandbox"; 
+      };
+
       homeModule = ./modules/home-manager.nix;
 
       nixosConfigurations = {
@@ -10,10 +18,10 @@
           modules = [
             {
 
-              services.getty.autologinUser = "root";
+              services.getty.autologinUser = "demo";
               users.users.root.initialPassword = "root"; # if needed
               environment.loginShellInit = ''
-                trap 'sudo poweroff' EXIT
+                trap 'sudo shutdown now' EXIT
               '';
               system.stateVersion = "25.05";
 
@@ -23,7 +31,10 @@
                 password = "demo"; # or use hashedPassword
               };
 
-              security.sudo.enable = true;
+              security.sudo = {
+                enable = true;
+                wheelNeedsPassword = false;
+              };
 
               home-manager.useGlobalPkgs = true;
               home-manager.useUserPackages = true;
