@@ -16,6 +16,8 @@ in
       initContent = ''
         echo "Hello world!"
       '';
+
+      enable = true;
     };
   };
 }

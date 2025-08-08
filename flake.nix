@@ -1,59 +1,48 @@
 {
+  inputs = {
+    flakelight.url = "github:nix-community/flakelight";
+    nixpkgs.url = "github:nixos/nixpkgs/nixpkgs-unstable";
+    home-manager = {
+      url = "github:nix-community/home-manager/release-25.05";
+      inputs.nixpkgs.follows = "nixpkgs";
+    };
+  };
+
   outputs =
     { flakelight, nixpkgs, ... }@inputs:
-    flakelight ./. {
-      apps = {
-        sandbox = { writeShellScriptBin, ...}: let
-          script = writeShellScriptBin "sandbox" ''
-          nixos-rebuild build-vm --flake ".#myhost" && result/bin/run-*-vm -display none -serial mon:stdio
-        '';
-        in "${script}/bin/sandbox"; 
-      };
+    let
+      exampleFiles = builtins.readDir ./examples;
+      exampleNames = builtins.attrNames (
+        nixpkgs.lib.filterAttrs (
+          name: type: type == "regular" && nixpkgs.lib.hasSuffix ".nix" name
+        ) exampleFiles
+      );
 
-      homeModule = ./modules/home-manager.nix;
+      configNames = map (name: nixpkgs.lib.removeSuffix ".nix" name) exampleNames;
 
-      nixosConfigurations = {
-        myhost = nixpkgs.lib.nixosSystem {
+      # Single base system configuration
+      baseSystem =
+        type:
+        nixpkgs.lib.nixosSystem {
           system = "x86_64-linux";
+          specialArgs = { inherit inputs type; };
           modules = [
-            {
-
-              services.getty.autologinUser = "demo";
-              users.users.root.initialPassword = "root"; # if needed
-              environment.loginShellInit = ''
-                trap 'sudo shutdown now' EXIT
-              '';
-              system.stateVersion = "25.05";
-
-              users.users.demo = {
-                isNormalUser = true;
-                extraGroups = [ "wheel" ]; # allows sudo
-                password = "demo"; # or use hashedPassword
-              };
-
-              security.sudo = {
-                enable = true;
-                wheelNeedsPassword = false;
-              };
-
-              home-manager.useGlobalPkgs = true;
-              home-manager.useUserPackages = true;
-              home-manager.users.demo = {
-                imports = [
-                  ./modules/home-manager.nix
-                ];
-
-                home.stateVersion = "25.05";
-                programs.nzf.enable = true;
-                programs.zsh.enable = true;
-              };
-            }
-
+            ./testvm.nix
             inputs.home-manager.nixosModules.home-manager
-
           ];
         };
-      };
+
+      genConfigs =
+        configs:
+        builtins.listToAttrs (
+          map (config: {
+            name = config;
+            value = baseSystem config;
+          }) configs
+        );
+    in
+    flakelight ./. {
+      nixosConfigurations = genConfigs configNames;
 
       devShell = pkgs: {
         packages = with pkgs; [
@@ -62,22 +51,13 @@
         ];
 
         shellHook = ''
-          # Run lefthook install only once per shell session
-          if [[ -d .git &&  -f .lefthook.yml && -z "$_LEFTHOOK_INSTALLED" ]]; then
+          if [[ -d .git && -f .lefthook.yml && -z "$_LEFTHOOK_INSTALLED" ]]; then
             export _LEFTHOOK_INSTALLED=1
             lefthook install
           fi
         '';
       };
-    };
 
-  inputs = {
-    flakelight.url = "github:nix-community/flakelight";
-    nixpkgs.url = "github:nixos/nixpkgs/nixpkgs-unstable";
-
-    home-manager = {
-      url = "github:nix-community/home-manager/release-25.05";
-      inputs.nixpkgs.follows = "nixpkgs";
+      homeModule = ./modules/home-manager.nix;
     };
-  };
 }

@@ -1,0 +1,6 @@
+{ ... }:
+{
+  programs.nzf = {
+    enable = true;
+  };
+}
