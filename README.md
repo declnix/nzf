@@ -3,7 +3,7 @@
 [![NixOS Unstable](https://img.shields.io/badge/NixOS-unstable-blue.svg?style=flat-square)](https://nixos.org/)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg?style=flat-square)](https://opensource.org/licenses/MIT)
 
-`nzf` is a lightweight, extensible Zsh configuration wrapper designed for Nix-based environments. It allows you to declaratively manage your Zsh plugins, ensuring they are loaded in the correct order with their dependencies resolved.
+`nzf` is a simple Zsh configuration generator for Nix-based environments, offering the ability to declaratively manage your Zsh plugins, ensuring they are loaded in the correct order or deferred.
 
 ## ⚠️ Disclaimer
 
@@ -20,7 +20,41 @@
 
 To use `nzf` in your Nix flake, add it as an input and import the module in your NixOS or Home Manager configuration.
 
-n
+```nix
+{ pkgs, lib, ... }:
+{
+  programs.nzf = {
+    plugins = with pkgs; {
+      zsh-fzf-tab = rec {
+        config = ''
+          source ${zsh-fzf-tab}/share/fzf-tab/fzf-tab.plugin.zsh
+        '';
+
+        defer = true;
+
+        extraPackages = [ fzf ];
+      };
+
+      zsh-vi-mode = rec {
+        config = ''
+          source ${zsh-vi-mode}/share/zsh-vi-mode/zsh-vi-mode.plugin.zsh
+        '';
+      };
+
+      zsh-fzf-history-search = {
+        config = ''
+          source ${zsh-fzf-history-search}/share/zsh-fzf-history-search/zsh-fzf-history-search.plugin.zsh
+        '';
+        defer = true;
+        extraPackages = [ fzf ];
+        # Ensure zsh-fzf-history-search loads after zsh-vi-mode to prevent keybinding conflicts.
+        after = [ "zsh-vi-mode" ];
+      };
+
+    };
+    enable = true;
+  };
+}
 ```
 
 ## ⚙️ Plugin Configuration
