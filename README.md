@@ -3,7 +3,7 @@
 [![NixOS Unstable](https://img.shields.io/badge/NixOS-unstable-blue.svg?style=flat-square)](https://nixos.org/)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg?style=flat-square)](https://opensource.org/licenses/MIT)
 
-`nzf` is a simple Zsh configuration generator for Nix-based environments, offering the ability to declaratively manage your Zsh plugins, ensuring they are loaded in the correct order or deferred.
+`nzf` is a personal Zsh configuration generator for Nix-based environments, primarily designed to bring the concept of declarative plugin blocks that can be loaded in a specific order or deferred. It offers the ability to declaratively manage your Zsh plugins, ensuring they are loaded in the correct order or deferred.
 
 ## ⚠️ Disclaimer
 
