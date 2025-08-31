@@ -9,7 +9,46 @@ let
   inherit (lib) types mkOption mkIf;
   cfg = config.programs.nzf;
   customTypes = import ../lib/types.nix { inherit lib pkgs; };
-  zsh-defer = import ./plugins/zsh-defer.nix { inherit lib pkgs; }; 
+  zsh-defer-module = import ./plugins/zsh-defer.nix { inherit lib pkgs; };
+
+  zshDeferPlugin = {
+    name = "zsh-defer";
+    config = zsh-defer-module.config;
+    after = [ ];
+    defer = false;
+  };
+
+  transformPlugin =
+    p:
+    if p.defer then
+      p
+      // {
+        after = p.after ++ [ pkgs.zsh-defer ];
+        config = ''
+          __defer_${p.name}_load() {
+            ${p.config}
+          }
+          zsh-defer __defer_${p.name}_load
+        '';
+      }
+    else
+      p;
+
+  userPlugins = lib.mapAttrsToList (name: value: value // { inherit name; }) cfg.plugins;
+
+  needsZshDefer =
+    lib.any (p: p.defer) userPlugins || lib.any (p: builtins.elem pkgs.zsh-defer p.after) userPlugins;
+
+  allPlugins =
+    if needsZshDefer && !(lib.any (p: p.name == "zsh-defer") userPlugins) then
+      userPlugins ++ [ zshDeferPlugin ]
+    else
+      userPlugins;
+
+  transformedPlugins = map transformPlugin allPlugins;
+
+  sortedPlugins =
+    (lib.lists.toposort (a: b: lib.any (pkg: pkg.pname == a.name) b.after) transformedPlugins).result;
 in
 {
   options.programs.nzf = {
@@ -33,28 +72,6 @@ in
   };
 
   config = mkIf cfg.enable {
-    programs.nzf._zshInit =
-      let
-        pluginList = lib.mapAttrsToList (name: value: value // { inherit name; }) ({ inherit zsh-defer; } // cfg.plugins);
-        transformedPlugins = map (
-          p:
-          if p.defer == true then
-            p
-            // {
-              after = p.after ++ [ pkgs.zsh-defer ];
-              config = ''
-                __defer_${p.name}_load() {
-                ${p.config}
-                }
-                zsh-defer __defer_${p.name}_load
-              '';
-            }
-          else
-            p
-        ) pluginList;
-        sortedPlugins = (lib.lists.toposort (a: b: builtins.elem a.name b.after) transformedPlugins).result;
-      in
-      lib.concatStringsSep "
-" (map (p: p.config) sortedPlugins);
+    programs.nzf._zshInit = lib.concatStringsSep "\n" (map (p: p.config) sortedPlugins);
   };
 }

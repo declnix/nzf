@@ -25,7 +25,7 @@
         defer = true;
         extraPackages = [ fzf ];
         # Ensure zsh-fzf-history-search loads after zsh-vi-mode to prevent keybinding conflicts.
-        after = [ "zsh-vi-mode" ];
+        after = [ zsh-vi-mode ];
       };
 
     };
