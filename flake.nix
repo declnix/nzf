@@ -49,7 +49,7 @@
                 home-manager.users.root = {
                   imports = [
                     ./example.nix
-                    homeModule.module
+                    outputs.homeManagerModules.default
                   ];
                   home.stateVersion = "25.05";
                 };
@@ -58,10 +58,6 @@
             home-manager.nixosModules.home-manager
           ];
         };
-      };
-
-      homeModule = {
-        module = ./flake/modules/home-manager.nix;
       };
 
       devShell = pkgs: {
@@ -77,6 +73,10 @@
             lefthook install
           fi
         '';
+      };
+
+      outputs = {
+        homeManagerModules.default = ./flake/modules/home-manager.nix;
       };
     });
 }
