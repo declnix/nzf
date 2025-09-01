@@ -10,9 +10,9 @@ types.submodule {
     };
 
     after = mkOption {
-      type = with types; listOf package;
+      type = with types; listOf str;
       default = [ ];
-      description = "A list of plugins that must be loaded before this one.";
+      description = "A list of plugins declarations that should be loaded before this one.";
     };
 
     extraPackages = mkOption {

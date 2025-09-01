@@ -48,10 +48,10 @@ let
   transformedPlugins = map transformPlugin allPlugins;
 
   sortedPlugins =
-    (lib.lists.toposort (a: b: lib.any (pkg: pkg.pname == a.name) b.after) transformedPlugins).result;
+    (lib.lists.toposort (a: b: lib.any (pluginName: pluginName == a.name) b.after) transformedPlugins).result;
 in
 {
-  options.programs.nzf = {
+  options.programs.nzf = 
     enable = mkOption {
       type = types.bool;
       default = false;
