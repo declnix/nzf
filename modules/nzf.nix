@@ -9,21 +9,13 @@ let
   inherit (lib) types mkOption mkIf;
   cfg = config.programs.nzf;
   customTypes = import ../lib/types.nix { inherit lib pkgs; };
-  zsh-defer-module = import ./plugins/zsh-defer.nix { inherit lib pkgs; };
-
-  zshDeferPlugin = {
-    name = "zsh-defer";
-    config = zsh-defer-module.config;
-    after = [ ];
-    defer = false;
-  };
 
   transformPlugin =
     p:
     if p.defer then
       p
       // {
-        after = p.after ++ [ pkgs.zsh-defer ];
+        after = p.after ++ [ "zsh-defer" ];
         config = ''
           __defer_${p.name}_load() {
             ${p.config}
@@ -34,24 +26,36 @@ let
     else
       p;
 
-  userPlugins = lib.mapAttrsToList (name: value: value // { inherit name; }) cfg.plugins;
+  pluginsToList = ps: lib.mapAttrsToList (name: value: value // { inherit name; }) ps;
 
-  needsZshDefer =
-    lib.any (p: p.defer) userPlugins || lib.any (p: builtins.elem pkgs.zsh-defer p.after) userPlugins;
-
-  allPlugins =
-    if needsZshDefer && !(lib.any (p: p.name == "zsh-defer") userPlugins) then
-      userPlugins ++ [ zshDeferPlugin ]
+  addZshDeferPlugin = ps:
+    let
+      # check if any plugin has defer = true or has "zsh-defer" in its after array
+      needsZshDefer = lib.any (p: p.defer == true || builtins.elem "zsh-defer" p.after) (lib.attrValues ps);
+    in
+    if needsZshDefer then
+      {
+        "zsh-defer" = import ./plugins/zsh-defer.nix { inherit pkgs; };
+      } // ps
     else
-      userPlugins;
+      ps;
 
-  transformedPlugins = map transformPlugin allPlugins;
+  transformDeferredPlugins = ps: map transformPlugin ps;
 
-  sortedPlugins =
-    (lib.lists.toposort (a: b: lib.any (pluginName: pluginName == a.name) b.after) transformedPlugins).result;
+  sortPlugins = ps: (lib.lists.toposort (a: b: lib.any (pluginName: pluginName == a.name) b.after) ps).result;
+
+  generateScript = ps: lib.concatStringsSep "\n" (map (p: p.config) ps);
+
+  _zshInit = lib.pipe cfg.plugins [
+    addZshDeferPlugin
+    pluginsToList
+    transformDeferredPlugins
+    sortPlugins
+    generateScript
+  ];
 in
 {
-  options.programs.nzf = 
+  options.programs.nzf = {
     enable = mkOption {
       type = types.bool;
       default = false;
@@ -72,6 +76,6 @@ in
   };
 
   config = mkIf cfg.enable {
-    programs.nzf._zshInit = lib.concatStringsSep "\n" (map (p: p.config) sortedPlugins);
+    programs.nzf._zshInit = _zshInit;
   };
 }
