@@ -1,20 +1,13 @@
-{
-  lib,
-  pkgs,
-  config,
-  ...
-}:
+{ lib, pkgs, config, ... }:
 
 let
   inherit (lib) types mkOption mkIf;
   cfg = config.programs.nzf;
   customTypes = import ../lib/types.nix { inherit lib pkgs; };
 
-  transformPlugin =
-    p:
+  transformPlugin = p:
     if p.defer then
-      p
-      // {
+      p // {
         after = p.after ++ [ "zsh-defer" ];
         config = ''
           __defer_${p.name}_load() {
@@ -26,23 +19,25 @@ let
     else
       p;
 
-  pluginsToList = ps: lib.mapAttrsToList (name: value: value // { inherit name; }) ps;
+  pluginsToList = ps:
+    lib.mapAttrsToList (name: value: value // { inherit name; }) ps;
 
   addZshDeferPlugin = ps:
     let
       # check if any plugin has defer = true or has "zsh-defer" in its after array
-      needsZshDefer = lib.any (p: p.defer == true || builtins.elem "zsh-defer" p.after) (lib.attrValues ps);
-    in
-    if needsZshDefer then
-      {
-        "zsh-defer" = import ./plugins/zsh-defer.nix { inherit pkgs; };
-      } // ps
+      needsZshDefer =
+        lib.any (p: p.defer == true || builtins.elem "zsh-defer" p.after)
+        (lib.attrValues ps);
+    in if needsZshDefer then
+      { "zsh-defer" = import ./plugins/zsh-defer.nix { inherit pkgs; }; } // ps
     else
       ps;
 
   transformDeferredPlugins = ps: map transformPlugin ps;
 
-  sortPlugins = ps: (lib.lists.toposort (a: b: lib.any (pluginName: pluginName == a.name) b.after) ps).result;
+  sortPlugins = ps:
+    (lib.lists.toposort
+      (a: b: lib.any (pluginName: pluginName == a.name) b.after) ps).result;
 
   generateScript = ps: lib.concatStringsSep "\n" (map (p: p.config) ps);
 
@@ -53,8 +48,7 @@ let
     sortPlugins
     generateScript
   ];
-in
-{
+in {
   options.programs.nzf = {
     enable = mkOption {
       type = types.bool;
@@ -71,11 +65,10 @@ in
     _zshInit = mkOption {
       type = types.lines;
       internal = true;
-      description = "The generated Zsh initialization script (for internal use).";
+      description =
+        "The generated Zsh initialization script (for internal use).";
     };
   };
 
-  config = mkIf cfg.enable {
-    programs.nzf._zshInit = _zshInit;
-  };
+  config = mkIf cfg.enable { programs.nzf._zshInit = _zshInit; };
 }

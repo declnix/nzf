@@ -1,5 +1,4 @@
-{ pkgs, lib, ... }:
-{
+{ pkgs, lib, ... }: {
   programs.nzf = {
     plugins = with pkgs; {
       zsh-fzf-tab = rec {
