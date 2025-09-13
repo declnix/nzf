@@ -1,9 +1,15 @@
-{ config, lib, pkgs, ... }:
+{
+  config,
+  lib,
+  pkgs,
+  ...
+}:
 
 let
   inherit (lib) mkIf;
   cfg = config.programs.nzf;
-in {
+in
+{
   imports = [ ../modules/nzf.nix ];
 
   config = mkIf cfg.enable {
@@ -12,7 +18,6 @@ in {
       initContent = cfg._zshInit;
     };
 
-    environment.systemPackages =
-      lib.concatMap (p: p.extraPackages) (lib.attrValues cfg.plugins);
+    environment.systemPackages = lib.concatMap (p: p.extraPackages) (lib.attrValues cfg.plugins);
   };
 }
