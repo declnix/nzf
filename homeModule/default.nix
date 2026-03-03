@@ -69,11 +69,16 @@ let
   # DAG ordering
   ############################################################
 
-  sorted =
-    (lib.lists.toposort
+  sortResult =
+    lib.lists.toposort
       (a: b: lib.elem a.name b.after)
-      withDefer
-    ).result;
+      withDefer;
+
+  sorted =
+    if sortResult ? cycle then
+      throw "nzf: circular dependency detected: ${toString (map (p: p.name) sortResult.cycle)}"
+    else
+      sortResult.result;
 
   ############################################################
   # Generate init script
@@ -81,13 +86,14 @@ let
 
   toScript = p:
     let
+      safeName = lib.replaceStrings ["-"] ["_"] p.name;
       sourceLine = "source ${p.src}/${p.file}";
     in
     if p.defer then ''
-      __nzf_${p.name}_load() {
+      __nzf_${safeName}_load() {
         ${sourceLine}
       }
-      zsh-defer __nzf_${p.name}_load
+      zsh-defer __nzf_${safeName}_load
     '' else
       sourceLine;
 

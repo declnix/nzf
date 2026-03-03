@@ -4,9 +4,7 @@ let
   mainCfg   = config.programs.nzf.zsh-autosuggestions;
   compatCfg = config.programs.nzf.autosuggestion;
 
-  enabled =
-    (mainCfg.enable or false) ||
-    (compatCfg.enable or false);
+  enabled = mainCfg.enable || compatCfg.enable;
 in
 {
   ############################################################
@@ -45,7 +43,7 @@ in
         name = "zsh-autosuggestions";
         src = pkgs.zsh-autosuggestions;
         file = "share/zsh-autosuggestions/zsh-autosuggestions.plugin.zsh";
-        defer = mainCfg.defer or false;
+        defer = mainCfg.defer;
         after = [];
       }
     ];
