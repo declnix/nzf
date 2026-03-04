@@ -47,32 +47,13 @@ let
     builtins.attrValues mergedMap;
 
   ############################################################
-  # Auto bootstrap zsh-defer if needed
-  ############################################################
-
-  needsDefer =
-    lib.any (p: p.defer) mergedPlugins;
-
-  withDefer =
-    if needsDefer then
-      mergedPlugins ++ [{
-        name = "zsh-defer";
-        src = pkgs.zsh-defer;
-        file = "zsh-defer.plugin.zsh";
-        defer = false;
-        after = [];
-      }]
-    else
-      mergedPlugins;
-
-  ############################################################
   # DAG ordering
   ############################################################
 
   sortResult =
     lib.lists.toposort
       (a: b: lib.elem a.name b.after)
-      withDefer;
+      mergedPlugins;
 
   sorted =
     if sortResult ? cycle then
@@ -86,16 +67,10 @@ let
 
   toScript = p:
     let
-      safeName = lib.replaceStrings ["-"] ["_"] p.name;
-      sourceLine = "source ${p.src}/${p.file}";
-    in
-    if p.defer then ''
-      __nzf_${safeName}_load() {
-        ${sourceLine}
-      }
-      zsh-defer __nzf_${safeName}_load
-    '' else
-      sourceLine;
+      base = "source ${p.src}/${p.file}";
+      baseHandler = _: script: script;
+      handler = lib.foldr (m: acc: m acc) baseHandler cfg._internal.middlewares;
+    in handler p base;
 
   generated =
     lib.concatStringsSep "\n" (map toScript sorted);
@@ -113,6 +88,12 @@ in
     # Framework plugins register themselves here
     _internal.plugins = mkOption {
       type = types.listOf pluginType;
+      default = [];
+      internal = true;
+    };
+
+    _internal.middlewares = mkOption {
+      type = types.listOf types.raw;
       default = [];
       internal = true;
     };
