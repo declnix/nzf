@@ -1,11 +1,11 @@
 { lib, pkgs, config, ... }:
 
 let
-  cfg = config.programs.nzf.zsh-defer;
-  allPlugins = config.programs.nzf._internal.plugins ++ config.programs.nzf.plugins;
+  inherit (config.programs) nzf;
+  cfg = nzf.zsh-defer;
 
-  needed = lib.any (p: p.defer || lib.elem "zsh-defer" p.after) allPlugins;
-  enabled = cfg.enable || needed;
+  allPlugins = nzf._internal.plugins ++ nzf.plugins;
+  usesDefer = p: p.defer || lib.elem "zsh-defer" p.after;
 in
 {
   options.programs.nzf.zsh-defer = {
@@ -15,11 +15,11 @@ in
     };
   };
 
-  config = lib.mkIf enabled {
-    programs.nzf._internal.plugins = lib.mkBefore [{
+  config = lib.mkIf (cfg.enable || lib.any usesDefer allPlugins) {
+    programs.nzf._internal.corePlugins = lib.mkBefore [{
       name = "zsh-defer";
       src = pkgs.zsh-defer;
-      file = "zsh-defer.plugin.zsh";
+      file = "share/zsh-defer/zsh-defer.plugin.zsh";
       defer = false;
       after = [];
     }];

@@ -37,11 +37,12 @@ let
     builtins.listToAttrs
       (map (p: { name = p.name; value = p; }) list);
 
+  coreMap      = toMap cfg._internal.corePlugins;
   frameworkMap = toMap cfg._internal.plugins;
   userMap      = toMap cfg.plugins;
 
-  # User plugins override framework plugins by name
-  mergedMap = frameworkMap // userMap;
+  # Core plugins first, then framework, then user overrides
+  mergedMap = coreMap // frameworkMap // userMap;
 
   mergedPlugins =
     builtins.attrValues mergedMap;
@@ -73,7 +74,7 @@ let
     in handler p base;
 
   generated =
-    lib.concatStringsSep "\n" (map toScript sorted);
+    lib.concatStringsSep "\n\n" (map toScript sorted);
 
 in
 {
@@ -83,6 +84,13 @@ in
     enable = mkOption {
       type = types.bool;
       default = false;
+    };
+
+    # Core plugins (like zsh-defer) that must load first
+    _internal.corePlugins = mkOption {
+      type = types.listOf pluginType;
+      default = [];
+      internal = true;
     };
 
     # Framework plugins register themselves here
@@ -106,9 +114,6 @@ in
   };
 
   config = mkIf cfg.enable {
-    programs.zsh = {
-      enable = true;
-      initExtra = generated;
-    };
+    home.file.".zshrc".text = generated;
   };
 }
