@@ -1,25 +1,32 @@
 {
-  description = "A very basic flake";
+  description = "Declarative zsh plugin manager";
 
   inputs = {
-    # ===========================================================
-    # CHANNELS
-    # ===========================================================
-    nixpkgs.url = "github:nixos/nixpkgs?ref=nixos-unstable";
-
-    # ===========================================================
-    # FRAMEWORKS
-    # ===========================================================
-    flakelight = {
-      url = "github:nix-community/flakelight";
-      inputs.nixpkgs.follows = "nixpkgs";
-    };
-
-    home-manager = {
-      url = "github:nix-community/home-manager/release-25.11";
-      inputs.nixpkgs.follows = "nixpkgs";
-    };
+    nixpkgs.url = "github:nixos/nixpkgs/nixos-unstable";
+    flakelight.url = "github:nix-community/flakelight";
+    home-manager.url = "github:nix-community/home-manager";
+    import-tree.url = "github:vic/import-tree";
   };
 
-  outputs = inputs@{ flakelight, ... }: (flakelight ./.) (import ./outputs.nix inputs);
+  outputs = {flakelight, ...} @ inputs:
+    flakelight ./. {
+      inherit inputs;
+
+      lib = import ./lib {inherit (inputs.nixpkgs) lib;};
+
+      homeModule = {lib, config, ...}: {
+        imports = [
+          (inputs.import-tree ./homeModule/plugins)
+          ./homeModule
+        ];
+      };
+
+      devShell = {pkgs, ...}: pkgs.mkShell {packages = [pkgs.nixfmt];};
+
+      nixosConfigurations.nzf-test = {
+        system = "x86_64-linux";
+        modules = [inputs.home-manager.nixosModules.home-manager ./tests/vm.nix];
+        specialArgs.inputs = inputs // {nzf = inputs.self;};
+      };
+    };
 }

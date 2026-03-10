@@ -1,0 +1,1 @@
+- validate `after` dependencies - check if plugins in after exist in merged map

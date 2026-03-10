@@ -1,7 +1,15 @@
-{ pkgs, flake, ... }:
-{
-  virtualisation.vmVariant.virtualisation.graphics = false;
+{pkgs, inputs, lib, modulesPath, ...}: {
+  imports = [(modulesPath + "/virtualisation/qemu-vm.nix")];
+
+  virtualisation.graphics = false;
   system.stateVersion = "25.05";
+
+  fileSystems."/" = {
+    device = "/dev/disk/by-label/nixos";
+    fsType = "ext4";
+  };
+
+  boot.loader.grub.device = lib.mkDefault "/dev/sda";
 
   programs.zsh.enable = true;
 
@@ -13,13 +21,17 @@
 
   services.getty.autologinUser = "test";
 
-  security.sudo.extraRules = [{
-    users = [ "test" ];
-    commands = [{
-      command = "/run/current-system/sw/bin/poweroff";
-      options = [ "NOPASSWD" ];
-    }];
-  }];
+  security.sudo.extraRules = [
+    {
+      users = ["test"];
+      commands = [
+        {
+          command = "/run/current-system/sw/bin/poweroff";
+          options = ["NOPASSWD"];
+        }
+      ];
+    }
+  ];
 
   environment.etc."motd".text = ''
     ══════════════════════════════════════
@@ -29,18 +41,22 @@
     ══════════════════════════════════════
   '';
 
-  home-manager.extraSpecialArgs = { inherit (flake) inputs; };
-
-  home-manager.users.test = {
-    imports = [ ../homeModule ];
+  home-manager.users.test = {...}: {
+    imports = [inputs.nzf.homeModules.default];
 
     programs.nzf = {
       enable = true;
-      autosuggestion.enable = true;
+      zsh-defer.enable = true;
+      zsh-autosuggestions.enable = true;
+      zsh-syntax-highlighting.enable = true;
+
+      plugins.my-config =
+        inputs.nzf.lib.entryAfter ["zsh-autosuggestions"] ''
+          bindkey '^ ' autosuggest-accept
+        '';
     };
 
     programs.zsh.shellAliases.q = "sudo poweroff";
-
     home.stateVersion = "25.11";
   };
 }
