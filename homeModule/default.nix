@@ -4,9 +4,16 @@
   ...
 }:
 let
-  inherit (lib) mkEnableOption mkOption mkIf mkDefault types concatStringsSep;
+  inherit (lib)
+    mkEnableOption
+    mkOption
+    mkIf
+    mkDefault
+    types
+    concatStringsSep
+    ;
   cfg = config.programs.nzf;
-  nzf = import ../lib {inherit lib;};
+  nzf = import ../lib { inherit lib; };
 in
 {
   options.programs.nzf = {
@@ -14,7 +21,7 @@ in
 
     plugins = mkOption {
       type = types.attrsOf types.anything;
-      default = {};
+      default = { };
     };
   };
 

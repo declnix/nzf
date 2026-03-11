@@ -8,25 +8,33 @@
     import-tree.url = "github:vic/import-tree";
   };
 
-  outputs = {flakelight, ...} @ inputs:
+  outputs =
+    { flakelight, ... }@inputs:
     flakelight ./. {
       inherit inputs;
 
-      lib = import ./lib {inherit (inputs.nixpkgs) lib;};
+      lib = import ./lib { inherit (inputs.nixpkgs) lib; };
 
-      homeModule = {lib, config, ...}: {
-        imports = [
-          (inputs.import-tree ./homeModule/plugins)
-          ./homeModule
-        ];
-      };
+      homeModule =
+        { lib, config, ... }:
+        {
+          imports = [
+            (inputs.import-tree ./homeModule/plugins)
+            ./homeModule
+          ];
+        };
 
-      devShell = {pkgs, ...}: pkgs.mkShell {packages = [pkgs.nixfmt];};
+      devShell = { pkgs, ... }: pkgs.mkShell { packages = [ pkgs.nixfmt ]; };
 
       nixosConfigurations.nzf-test = {
         system = "x86_64-linux";
-        modules = [inputs.home-manager.nixosModules.home-manager ./tests/vm.nix];
-        specialArgs.inputs = inputs // {nzf = inputs.self;};
+        modules = [
+          inputs.home-manager.nixosModules.home-manager
+          ./tests/vm.nix
+        ];
+        specialArgs.inputs = inputs // {
+          nzf = inputs.self;
+        };
       };
     };
 }
