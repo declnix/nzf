@@ -60,6 +60,7 @@
         zsh-fzf-history-search.enable = true;
         zsh-autosuggestions.enable = true;
         zsh-syntax-highlighting.enable = true;
+        oh-my-zsh.plugins = [ "git" ];
 
         plugins.my-config = inputs.nzf.lib.entryAfter [ "zsh-autosuggestions" ] ''
           bindkey '^ ' autosuggest-accept
