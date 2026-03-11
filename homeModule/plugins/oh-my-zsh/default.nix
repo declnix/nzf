@@ -3,7 +3,12 @@
   ...
 }:
 let
-  inherit (lib) mkOption types filterAttrs hasSuffix;
+  inherit (lib)
+    mkOption
+    types
+    filterAttrs
+    hasSuffix
+    ;
 
   importDir =
     dir:

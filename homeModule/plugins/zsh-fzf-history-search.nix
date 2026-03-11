@@ -14,10 +14,12 @@ in
   options.programs.nzf.zsh-fzf-history-search.enable = mkEnableOption "zsh-fzf-history-search";
 
   config = mkIf cfg.enable {
-    programs.nzf.zsh-defer.enable = mkDefault true;
+    programs.nzf = {
+      plugins.zsh-fzf-history-search = entryAfter [ "zsh-defer" ] (
+        defer (plugin pkgs.zsh-fzf-history-search)
+      );
+      zsh-defer.enable = mkDefault true;
+    };
     home.packages = [ pkgs.fzf ];
-    programs.nzf.plugins.zsh-fzf-history-search = entryAfter [ "zsh-defer" ] (
-      defer (plugin pkgs.zsh-fzf-history-search)
-    );
   };
 }

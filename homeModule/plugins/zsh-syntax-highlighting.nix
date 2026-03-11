@@ -20,13 +20,17 @@ let
   pkg = pkgs.zsh-syntax-highlighting;
 in
 {
-  options.programs.nzf.zsh-syntax-highlighting.enable = mkEnableOption "zsh-syntax-highlighting";
-  options.programs.nzf.syntaxHighlighting.enable = mkEnableOption "zsh-syntax-highlighting";
+  options.programs.nzf = {
+    zsh-syntax-highlighting.enable = mkEnableOption "zsh-syntax-highlighting";
+    syntaxHighlighting.enable = mkEnableOption "zsh-syntax-highlighting";
+  };
 
   config = mkIf (cfg.enable || hmCfg.enable) {
-    programs.nzf.zsh-defer.enable = mkDefault true;
-    programs.nzf.plugins.zsh-syntax-highlighting = entryAfter (
-      [ "zsh-defer" ] ++ optional (autosuggestion.enable || autosuggestions.enable) "zsh-autosuggestions"
-    ) (defer (pluginFile pkg "share/zsh-syntax-highlighting/zsh-syntax-highlighting.zsh"));
+    programs.nzf = {
+      plugins.zsh-syntax-highlighting = entryAfter (
+        [ "zsh-defer" ] ++ optional (autosuggestion.enable || autosuggestions.enable) "zsh-autosuggestions"
+      ) (defer (pluginFile pkg "share/zsh-syntax-highlighting/zsh-syntax-highlighting.zsh"));
+      zsh-defer.enable = mkDefault true;
+    };
   };
 }

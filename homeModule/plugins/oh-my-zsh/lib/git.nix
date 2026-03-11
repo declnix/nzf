@@ -14,11 +14,11 @@ let
 in
 {
   config = mkIf enabled {
-    programs.nzf.zsh-defer.enable = mkDefault true;
-    programs.nzf.plugins.omz-lib-git = entryAfter [ "zsh-defer" ] (
-      defer ''
+    programs.nzf = {
+      plugins.omz-lib-git = entryAfter [ "zsh-defer" ] (defer ''
         source ${omz}/share/oh-my-zsh/lib/git.zsh
-      ''
-    );
+      '');
+      zsh-defer.enable = mkDefault true;
+    };
   };
 }

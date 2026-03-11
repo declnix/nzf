@@ -23,8 +23,8 @@ in
 
   config = mkIf cfg.enable {
     home.packages = [ pkgs.fzf ];
-    programs.nzf.plugins.zsh-fzf-tab = entryBefore (
-      optional (autosuggestion.enable || autosuggestions.enable) "zsh-autosuggestions"
-    ) "source ${src}/fzf-tab.plugin.zsh";
+    programs.nzf.plugins.zsh-fzf-tab = entryBefore (optional (
+      autosuggestion.enable || autosuggestions.enable
+    ) "zsh-autosuggestions") "source ${src}/fzf-tab.plugin.zsh";
   };
 }
