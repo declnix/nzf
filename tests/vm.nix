@@ -1,5 +1,12 @@
-{pkgs, inputs, lib, modulesPath, ...}: {
-  imports = [(modulesPath + "/virtualisation/qemu-vm.nix")];
+{
+  pkgs,
+  inputs,
+  lib,
+  modulesPath,
+  ...
+}:
+{
+  imports = [ (modulesPath + "/virtualisation/qemu-vm.nix") ];
 
   virtualisation.graphics = false;
   system.stateVersion = "25.05";
@@ -23,11 +30,11 @@
 
   security.sudo.extraRules = [
     {
-      users = ["test"];
+      users = [ "test" ];
       commands = [
         {
           command = "/run/current-system/sw/bin/poweroff";
-          options = ["NOPASSWD"];
+          options = [ "NOPASSWD" ];
         }
       ];
     }
@@ -41,22 +48,25 @@
     ══════════════════════════════════════
   '';
 
-  home-manager.users.test = {...}: {
-    imports = [inputs.nzf.homeModules.default];
+  home-manager.users.test =
+    { ... }:
+    {
+      imports = [ inputs.nzf.homeModules.default ];
 
-    programs.nzf = {
-      enable = true;
-      zsh-defer.enable = true;
-      zsh-autosuggestions.enable = true;
-      zsh-syntax-highlighting.enable = true;
+      programs.nzf = {
+        enable = true;
+        zsh-defer.enable = true;
+        zsh-fzf-tab.enable = true;
+        zsh-fzf-history-search.enable = true;
+        zsh-autosuggestions.enable = true;
+        zsh-syntax-highlighting.enable = true;
 
-      plugins.my-config =
-        inputs.nzf.lib.entryAfter ["zsh-autosuggestions"] ''
+        plugins.my-config = inputs.nzf.lib.entryAfter [ "zsh-autosuggestions" ] ''
           bindkey '^ ' autosuggest-accept
         '';
-    };
+      };
 
-    programs.zsh.shellAliases.q = "sudo poweroff";
-    home.stateVersion = "25.11";
-  };
+      programs.zsh.shellAliases.q = "sudo poweroff";
+      home.stateVersion = "25.11";
+    };
 }
